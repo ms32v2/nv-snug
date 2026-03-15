@@ -1,60 +1,81 @@
 // src/bot/index.js
 import mineflayer from "mineflayer";
+import pkg from "mineflayer-pathfinder";
 import { config } from "dotenv";
+
 import { attachChatHandler } from "./chat.js";
 import { schedule } from "./scheduler.js";
 import { logger } from "../utils/logger.js";
 
-config(); // load .env
+config();
+
+// Load pathfinder plugin
+const { pathfinder } = pkg;
 
 // -------------------------------------------------
-// 1️⃣  Bot name & auto‑login command
+// 1️⃣ Bot name & auto-login command
 // -------------------------------------------------
-const BOT_NAME = process.env.BOT_USERNAME || "Ronny";          // default name
-const LOGIN_COMMAND = "/login cpmp0043";                      // hard‑coded login command
+const BOT_NAME = process.env.BOT_USERNAME || "Ronny";
+const LOGIN_COMMAND = "/login cpmp0043";
 
 // -------------------------------------------------
-// 2️⃣  Create the Mineflayer client
+// 2️⃣ Create the Mineflayer client
 // -------------------------------------------------
 const bot = mineflayer.createBot({
   host: process.env.MC_HOST,
   port: parseInt(process.env.MC_PORT, 10) || 25565,
-  username: BOT_NAME,
-  // password: process.env.MC_PASSWORD,   // uncomment if you use a premium account
+  username: BOT_NAME
 });
 
 // -------------------------------------------------
-// 3️⃣  Auto‑login as soon as we spawn
+// 3️⃣ Load plugins (IMPORTANT)
+// -------------------------------------------------
+bot.loadPlugin(pathfinder);
+
+// -------------------------------------------------
+// 4️⃣ Auto-login as soon as we spawn
 // -------------------------------------------------
 bot.once("spawn", async () => {
+
   logger.info(`✅ Bot "${BOT_NAME}" spawned on ${process.env.MC_HOST}`);
 
-  // Some servers need a short pause before they accept chat commands
   setTimeout(() => {
     bot.chat(LOGIN_COMMAND);
-    logger.info(`🔐 Sent auto‑login command → ${LOGIN_COMMAND}`);
-  }, 2_000); // 2 seconds – increase if your server is slower
+    logger.info(`🔐 Sent auto-login command → ${LOGIN_COMMAND}`);
+  }, 2000);
 
-  // Friendly greeting
-  bot.chat("Hey! I’m Ronny, an AI‑powered bot. Ask me anything.");
+  bot.chat("Hey! I’m Ronny, an AI-powered bot. Ask me anything.");
+
 });
 
 // -------------------------------------------------
-// 4️⃣  Forward in‑game chat to the LLM
+// 5️⃣ Forward in-game chat to the AI
 // -------------------------------------------------
 attachChatHandler(bot);
 
 // -------------------------------------------------
-// 5️⃣  Start the day‑night planner loop
+// 6️⃣ Start the AI scheduler loop
 // -------------------------------------------------
 schedule(bot);
 
 // -------------------------------------------------
-// 6️⃣  Graceful shutdown handling
+// 7️⃣ Error logging
 // -------------------------------------------------
-process.on("SIGINT", () => {
-  logger.info("\n👋 Shutting down…");
-  bot.quit();
-  process.exit(0);
+bot.on("error", (err) => {
+  logger.error(`Bot error: ${err.message}`);
 });
 
+bot.on("kicked", (reason) => {
+  logger.warn(`Bot kicked: ${reason}`);
+});
+
+// -------------------------------------------------
+// 8️⃣ Graceful shutdown
+// -------------------------------------------------
+process.on("SIGINT", () => {
+
+  logger.info("👋 Shutting down...");
+  bot.quit();
+  process.exit(0);
+
+});

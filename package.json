@@ -23,7 +23,7 @@
     "dotenv": "^16.4.5",
     "mineflayer": "^4.15.0",
     "mineflayer-pathfinder": "^2.4.5",
-    "mineflayer-collect-block": "^1.6.0",
+    "mineflayer-collectblock": "^1.3.0",
     "openai": "^4.56.0",
     "axios": "^1.7.2",
     "winston": "^3.13.0",

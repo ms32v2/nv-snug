@@ -1,28 +1,36 @@
 {
   "name": "mindcraft",
   "version": "1.0.0",
-  "description": "AI‑powered autonomous Minecraft player named Ronny",
+  "description": "AI-powered autonomous Minecraft player named Ronny",
   "main": "src/bot/index.js",
   "type": "module",
+
+  "engines": {
+    "node": ">=18"
+  },
+
   "scripts": {
-    "dev": "nodemon src/bot/index.js",
     "start": "node src/bot/index.js",
+    "dev": "nodemon src/bot/index.js",
     "lint": "eslint . --ext .js",
     "test": "jest"
   },
+
   "author": "Saif",
   "license": "MIT",
+
   "dependencies": {
     "dotenv": "^16.4.5",
     "mineflayer": "^4.15.0",
-    "mineflayer-pathfinder": "^1.0.0",
+    "mineflayer-pathfinder": "^2.4.5",
     "mineflayer-collect-block": "^1.6.0",
-    "openai": "^4.33.2",
+    "openai": "^4.56.0",
     "axios": "^1.7.2",
     "winston": "^3.13.0",
-    "@langchain/openai": "^0.0.20",
-    "@langchain/core": "latest"
+    "@langchain/openai": "^0.3.5",
+    "@langchain/core": "^0.3.5"
   },
+
   "devDependencies": {
     "nodemon": "^3.1.4",
     "eslint": "^9.6.0",
@@ -30,4 +38,3 @@
     "prettier": "^3.3.2"
   }
 }
-

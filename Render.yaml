@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: mindcraft-bot
+    env: docker
+    plan: starter          # change to 'standard' if you need more RAM/CPU
+    dockerfilePath: Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: MC_HOST
+        sync: false
+      - key: MC_PORT
+        sync: false
+      - key: BOT_USERNAME   # optional – defaults to Ronny
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        sync: false
+      - key: SERPAPI_KEY    # optional – only if you use webSearch
+        sync: false
+

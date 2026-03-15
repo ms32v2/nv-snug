@@ -27,10 +27,15 @@ export function schedule(bot, intervalMs = 7000) {
         ? bot.food
         : "unknown";
 
-    const pos = bot.entity?.position || { x: 0, y: 0, z: 0 };
+    const pos = bot.entity?.position;
 
-    const inventory = bot.inventory
-      .items()
+    const x = pos?.x ?? 0;
+    const y = pos?.y ?? 0;
+    const z = pos?.z ?? 0;
+
+    const inventoryItems = bot.inventory?.items?.() || [];
+
+    const inventory = inventoryItems
       .map((i) => `${i.name}×${i.count}`)
       .join(", ");
 
@@ -41,7 +46,7 @@ export function schedule(bot, intervalMs = 7000) {
         `time:${dayOrNight} (${time}), ` +
         `health:${health}, ` +
         `food:${food}, ` +
-        `position:${pos.x.toFixed(1)},${pos.y.toFixed(1)},${pos.z.toFixed(1)}, ` +
+        `position:${x.toFixed(1)},${y.toFixed(1)},${z.toFixed(1)}, ` +
         `inventory:[${inventory}]`
     };
   };
@@ -58,18 +63,18 @@ export function schedule(bot, intervalMs = 7000) {
 
     try {
 
-      // update system prompt
+      // refresh system prompt
       sharedMemory[0] = {
         role: "system",
         content: SYSTEM_PROMPT
       };
 
-      // add status message
+      // push bot state
       sharedMemory.push(buildStatusMessage());
 
-      // limit memory size
+      // keep memory small
       if (sharedMemory.length > 12) {
-        sharedMemory.splice(2, sharedMemory.length - 12);
+        sharedMemory.splice(1, sharedMemory.length - 12);
       }
 
       const action = await askPlanner(sharedMemory);
@@ -86,7 +91,6 @@ export function schedule(bot, intervalMs = 7000) {
 
     }
 
-    // next cycle
     setTimeout(tick, intervalMs);
   };
 
@@ -96,7 +100,10 @@ export function schedule(bot, intervalMs = 7000) {
       `📅 Scheduler started — querying AI every ${intervalMs} ms`
     );
 
-    tick();
+    // small delay so Mineflayer fully loads
+    setTimeout(() => {
+      tick();
+    }, 3000);
 
   });
 

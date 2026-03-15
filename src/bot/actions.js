@@ -82,7 +82,10 @@ export async function place(bot, { x, y, z, item }) {
 /* ------------------------------------------------ */
 /* STATUS */
 export async function status(bot) {
-  const msg = `Health: ${bot.health.toFixed(1)} | Food: ${bot.food}`;
+  const health = bot.health != null ? bot.health.toFixed(1) : "?";
+  const food = bot.food != null ? bot.food : "?";
+
+  const msg = `Health: ${health} | Food: ${food}`;
   return safeExec("status", () => bot.chat(msg));
 }
 
@@ -100,23 +103,61 @@ export async function inventory(bot) {
 }
 
 /* ------------------------------------------------ */
-/* SIMPLE COMMAND RUNNER */
-export function runCommand(bot, command) {
-  if (!command) return;
+/* COMMAND RUNNER (AI compatible) */
 
-  if (command.startsWith("say ")) {
-    bot.chat(command.replace("say ", ""));
-    return;
+export async function runCommand(bot, command) {
+
+  if (!command || typeof command !== "object") {
+    logger.warn("Invalid command from planner");
+    return false;
   }
 
-  if (command === "jump") {
-    bot.setControlState("jump", true);
-    setTimeout(() => bot.setControlState("jump", false), 500);
-    return;
-  }
+  const { action, params } = command;
 
-  if (command === "stop") {
-    bot.clearControlStates();
-    return;
+  try {
+
+    switch (action) {
+
+      case "say":
+        return await say(bot, params);
+
+      case "move":
+        return await move(bot, params);
+
+      case "dig":
+        return await dig(bot, params);
+
+      case "place":
+        return await place(bot, params);
+
+      case "status":
+        return await status(bot);
+
+      case "inventory":
+        return await inventory(bot);
+
+      case "collect":
+        bot.chat("Collecting nearby items...");
+        return true;
+
+      case "jump":
+        bot.setControlState("jump", true);
+        setTimeout(() => bot.setControlState("jump", false), 500);
+        return true;
+
+      case "stop":
+        bot.clearControlStates();
+        return true;
+
+      default:
+        logger.warn(`Unknown action: ${action}`);
+        return false;
+    }
+
+  } catch (e) {
+
+    logger.error(`Command execution failed: ${e.message}`);
+    return false;
+
   }
 }

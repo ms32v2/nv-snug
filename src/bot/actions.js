@@ -21,21 +21,42 @@ async function safeExec(name, fn) {
 
 /* ------------------------------------------------ */
 /* SAY */
-export async function say(bot, { text }) {
+export async function say(bot, params = {}) {
+  const text = params.text || "...";
   return safeExec(`say "${text}"`, () => bot.chat(text));
 }
 
 /* ------------------------------------------------ */
 /* MOVE */
-export async function move(bot, { x, y, z }) {
+export async function move(bot, params = {}) {
+
+  if (!bot.pathfinder) {
+    logger.warn("Pathfinder plugin not loaded");
+    return false;
+  }
+
+  if (!bot.entity) {
+    logger.warn("Bot entity not ready");
+    return false;
+  }
+
+  const x = params.x ?? bot.entity.position.x;
+  const y = params.y ?? bot.entity.position.y;
+  const z = params.z ?? bot.entity.position.z;
+
   const goal = new GoalBlock(x, y, z);
+
   bot.pathfinder.setGoal(goal);
 
   return new Promise((resolve) => {
+
     const timeout = setTimeout(() => resolve(false), 30000);
 
     const check = () => {
-      const pos = bot.entity.position;
+
+      const pos = bot.entity?.position;
+
+      if (!pos) return;
 
       if (
         Math.abs(pos.x - x) < 1 &&
@@ -46,28 +67,44 @@ export async function move(bot, { x, y, z }) {
         bot.removeListener("physicsTick", check);
         resolve(true);
       }
+
     };
 
     bot.on("physicsTick", check);
+
   });
+
 }
 
 /* ------------------------------------------------ */
 /* DIG */
-export async function dig(bot, { x, y, z }) {
+export async function dig(bot, params = {}) {
+
+  const { x, y, z } = params;
+
+  if (x == null || y == null || z == null) return false;
+
   const block = bot.blockAt({ x, y, z });
   if (!block) return false;
 
   return safeExec(`dig ${block.name}`, () => bot.dig(block));
+
 }
 
 /* ------------------------------------------------ */
 /* PLACE */
-export async function place(bot, { x, y, z, item }) {
+export async function place(bot, params = {}) {
+
+  const { x, y, z, item } = params;
+
+  if (!item) return false;
+
   const reference = bot.blockAt({ x, y, z });
   if (!reference) return false;
 
-  const inventoryItem = bot.inventory.items().find((i) => i.name === item);
+  const items = bot.inventory?.items?.() || [];
+  const inventoryItem = items.find((i) => i.name === item);
+
   if (!inventoryItem) return false;
 
   await bot.equip(inventoryItem, "hand");
@@ -77,33 +114,40 @@ export async function place(bot, { x, y, z, item }) {
   return safeExec(`place ${item}`, () =>
     bot.placeBlock(reference, direction)
   );
+
 }
 
 /* ------------------------------------------------ */
 /* STATUS */
 export async function status(bot) {
+
   const health = bot.health != null ? bot.health.toFixed(1) : "?";
   const food = bot.food != null ? bot.food : "?";
 
   const msg = `Health: ${health} | Food: ${food}`;
+
   return safeExec("status", () => bot.chat(msg));
+
 }
 
 /* ------------------------------------------------ */
 /* INVENTORY */
 export async function inventory(bot) {
-  const items = bot.inventory.items();
+
+  const items = bot.inventory?.items?.() || [];
 
   if (items.length === 0) {
     return safeExec("inventory", () => bot.chat("I have nothing"));
   }
 
   const list = items.map((i) => `${i.name}×${i.count}`).join(", ");
+
   return safeExec("inventory", () => bot.chat(`I have: ${list}`));
+
 }
 
 /* ------------------------------------------------ */
-/* COMMAND RUNNER (AI compatible) */
+/* COMMAND RUNNER */
 
 export async function runCommand(bot, command) {
 
@@ -137,7 +181,7 @@ export async function runCommand(bot, command) {
         return await inventory(bot);
 
       case "collect":
-        bot.chat("Collecting nearby items...");
+        bot.chat("Looking for nearby items...");
         return true;
 
       case "jump":
@@ -152,6 +196,7 @@ export async function runCommand(bot, command) {
       default:
         logger.warn(`Unknown action: ${action}`);
         return false;
+
     }
 
   } catch (e) {
@@ -160,4 +205,5 @@ export async function runCommand(bot, command) {
     return false;
 
   }
+
 }

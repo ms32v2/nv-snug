@@ -3,15 +3,9 @@ import mineflayer from "mineflayer";
 import { pathfinder, Movements, goals } from "mineflayer-pathfinder";
 import { Vec3 } from "vec3";
 import { config } from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
 
-// Resolve __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-import { runCommand } from path.join(__dirname, "actions.js");
-import { askPlanner } from path.join(__dirname, "ai", "planner.js");
+import { runCommand } from "./actions.js";
+import { askPlanner } from "./ai/planner.js";
 
 config();
 

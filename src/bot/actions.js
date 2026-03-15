@@ -221,4 +221,21 @@ export async function custom(bot, { fn }) {
   }
   return false;
 }
+export function runCommand(bot, command) {
+  if (!command) return;
+
+  if (command.startsWith("say ")) {
+    bot.chat(command.replace("say ", ""));
+  }
+
+  if (command === "jump") {
+    bot.setControlState("jump", true);
+    setTimeout(() => bot.setControlState("jump", false), 500);
+  }
+
+  if (command === "stop") {
+    bot.clearControlStates();
+  }
+}
+
 

@@ -22,8 +22,6 @@
     "openai": "^4.56.0",
     "axios": "^1.7.2",
     "winston": "^3.13.0",
-    "@langchain/core": "^0.3.5",
-    "@langchain/openai": "^0.3.5"
   },
 
   "devDependencies": {

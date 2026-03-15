@@ -1,81 +1,84 @@
-// src/bot/index.js
+// bot.js
 import mineflayer from "mineflayer";
-import pkg from "mineflayer-pathfinder";
+import { pathfinder, Movements, goals } from "mineflayer-pathfinder";
+import { Vec3 } from "vec3";
 import { config } from "dotenv";
-
-import { attachChatHandler } from "./chat.js";
-import { schedule } from "./scheduler.js";
-import { logger } from "../utils/logger.js";
+import { runCommand } from "./actions.js";
+import { askPlanner } from "./ai/planner.js";
 
 config();
 
-// Load pathfinder plugin
-const { pathfinder } = pkg;
-
-// -------------------------------------------------
-// 1️⃣ Bot name & auto-login command
-// -------------------------------------------------
 const BOT_NAME = process.env.BOT_USERNAME || "Ronny";
-const LOGIN_COMMAND = "/login <cpmp0043>";
+const MC_HOST = process.env.MC_HOST || "localhost";
+const MC_PORT = parseInt(process.env.MC_PORT, 10) || 25565;
 
-// -------------------------------------------------
-// 2️⃣ Create the Mineflayer client
-// -------------------------------------------------
-const bot = mineflayer.createBot({
-  host: process.env.MC_HOST,
-  port: parseInt(process.env.MC_PORT, 10) || 25565,
-  username: BOT_NAME
-});
+let bot;
 
-// -------------------------------------------------
-// 3️⃣ Load plugins (IMPORTANT)
-// -------------------------------------------------
-bot.loadPlugin(pathfinder);
+function createBot() {
+  bot = mineflayer.createBot({
+    host: MC_HOST,
+    port: MC_PORT,
+    username: BOT_NAME,
+  });
 
-// -------------------------------------------------
-// 4️⃣ Auto-login as soon as we spawn
-// -------------------------------------------------
-bot.once("spawn", async () => {
+  bot.loadPlugin(pathfinder);
 
-  logger.info(`✅ Bot "${BOT_NAME}" spawned on ${process.env.MC_HOST}`);
+  bot.once("spawn", () => {
+    console.log(`✅ Bot "${BOT_NAME}" spawned`);
+    bot.chat("Hey! I am Ronny, an AI-powered bot.");
+    humanIdle(); // start random human-like idle actions
+  });
 
-  setTimeout(() => {
-    bot.chat(LOGIN_COMMAND);
-    logger.info(`🔐 Sent auto-login command → ${LOGIN_COMMAND}`);
-  }, 2000);
+  bot.on("chat", async (username, message) => {
+    if (username === bot.username) return;
 
-  bot.chat("Hey! I’m Ronny, an AI-powered bot. Ask me anything.");
+    // Ask NVIDIA LLM what to do
+    const action = await askPlanner([{ role: "user", content: message }]);
+    await runCommand(bot, action);
+  });
 
-});
+  bot.on("kicked", (reason) => {
+    console.log(`❌ Kicked: ${reason}. Reconnecting in 5s...`);
+    setTimeout(createBot, 5000);
+  });
 
-// -------------------------------------------------
-// 5️⃣ Forward in-game chat to the AI
-// -------------------------------------------------
-attachChatHandler(bot);
+  bot.on("end", () => {
+    console.log("🔌 Disconnected. Reconnecting in 5s...");
+    setTimeout(createBot, 5000);
+  });
 
-// -------------------------------------------------
-// 6️⃣ Start the AI scheduler loop
-// -------------------------------------------------
-schedule(bot);
+  bot.on("error", (err) => {
+    console.error("❌ Bot error:", err.message);
+  });
+}
 
-// -------------------------------------------------
-// 7️⃣ Error logging
-// -------------------------------------------------
-bot.on("error", (err) => {
-  logger.error(`Bot error: ${err.message}`);
-});
+createBot();
 
-bot.on("kicked", (reason) => {
-  logger.warn(`Bot kicked: ${reason}`);
-});
+// -----------------------------
+// Human-like random idle actions
+function humanIdle() {
+  if (!bot || !bot.entity) return;
 
-// -------------------------------------------------
-// 8️⃣ Graceful shutdown
-// -------------------------------------------------
-process.on("SIGINT", () => {
+  const actions = ["jump", "lookAround", "walkRandom"];
+  const choice = actions[Math.floor(Math.random() * actions.length)];
 
-  logger.info("👋 Shutting down...");
-  bot.quit();
-  process.exit(0);
+  switch (choice) {
+    case "jump":
+      bot.setControlState("jump", true);
+      setTimeout(() => bot.setControlState("jump", false), 400 + Math.random() * 300);
+      break;
+    case "lookAround":
+      bot.look(Math.random() * Math.PI * 2, Math.random() * Math.PI);
+      break;
+    case "walkRandom":
+      const dx = (Math.random() - 0.5) * 5;
+      const dz = (Math.random() - 0.5) * 5;
+      const target = bot.entity.position.offset(dx, 0, dz);
+      const defaultMove = new Movements(bot);
+      bot.pathfinder.setMovements(defaultMove);
+      bot.pathfinder.setGoal(new goals.GoalNear(target.x, target.y, target.z, 1));
+      break;
+  }
 
-});
+  setTimeout(humanIdle, 3000 + Math.random() * 2000);
+}

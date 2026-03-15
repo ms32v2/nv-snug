@@ -1,5 +1,6 @@
 // src/bot/actions.js
-import { GoalBlock } from "mineflayer-pathfinder";
+import pkg from "mineflayer-pathfinder";
+const { GoalBlock } = pkg.goals;
 import { logger } from "../utils/logger.js";
 
 /* ------------------------------------------------------------------- */

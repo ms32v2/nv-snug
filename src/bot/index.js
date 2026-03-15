@@ -1,10 +1,17 @@
-// bot.js
+// index.js (fixed)
 import mineflayer from "mineflayer";
 import { pathfinder, Movements, goals } from "mineflayer-pathfinder";
 import { Vec3 } from "vec3";
 import { config } from "dotenv";
-import { runCommand } from "./actions.js";
-import { askPlanner } from "./ai/planner.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Resolve __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+import { runCommand } from path.join(__dirname, "actions.js");
+import { askPlanner } from path.join(__dirname, "ai", "planner.js");
 
 config();
 
@@ -32,9 +39,13 @@ function createBot() {
   bot.on("chat", async (username, message) => {
     if (username === bot.username) return;
 
-    // Ask NVIDIA LLM what to do
-    const action = await askPlanner([{ role: "user", content: message }]);
-    await runCommand(bot, action);
+    try {
+      // Ask NVIDIA LLM what to do
+      const action = await askPlanner([{ role: "user", content: message }]);
+      await runCommand(bot, action);
+    } catch (e) {
+      console.error("❌ Error handling chat message:", e.message);
+    }
   });
 
   bot.on("kicked", (reason) => {

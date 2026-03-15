@@ -16,7 +16,7 @@ const { pathfinder } = pkg;
 // 1️⃣ Bot name & auto-login command
 // -------------------------------------------------
 const BOT_NAME = process.env.BOT_USERNAME || "Ronny";
-const LOGIN_COMMAND = "/login cpmp0043";
+const LOGIN_COMMAND = "/login <cpmp0043>";
 
 // -------------------------------------------------
 // 2️⃣ Create the Mineflayer client

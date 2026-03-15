@@ -1,4 +1,4 @@
-// index.js (fixed)
+// src/bot/index.js
 import mineflayer from "mineflayer";
 import { pathfinder, Movements, goals } from "mineflayer-pathfinder";
 import { Vec3 } from "vec3";
@@ -27,18 +27,17 @@ function createBot() {
   bot.once("spawn", () => {
     console.log(`✅ Bot "${BOT_NAME}" spawned`);
     bot.chat("Hey! I am Ronny, an AI-powered bot.");
-    humanIdle(); // start random human-like idle actions
+    humanIdle(); // random human-like actions
   });
 
   bot.on("chat", async (username, message) => {
     if (username === bot.username) return;
 
     try {
-      // Ask NVIDIA LLM what to do
       const action = await askPlanner([{ role: "user", content: message }]);
       await runCommand(bot, action);
     } catch (e) {
-      console.error("❌ Error handling chat message:", e.message);
+      console.error("❌ Chat error:", e.message);
     }
   });
 
@@ -60,7 +59,7 @@ function createBot() {
 createBot();
 
 // -----------------------------
-// Human-like random idle actions
+// Human-like idle behavior
 function humanIdle() {
   if (!bot || !bot.entity) return;
 
